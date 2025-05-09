@@ -61,8 +61,8 @@ public struct PanelPopView: View {
 
                     case .image:
                         HStack {
-                            if let url = block.data.file?.url {
-                                LazyImage(url: URL(string: url)!) { state in
+                            if let url = block.data.file?.url, let validURL = URL(string: url) {
+                                LazyImage(url: validURL) { state in
                                     if let image = state.image {
                                         image
                                             .resizable()
