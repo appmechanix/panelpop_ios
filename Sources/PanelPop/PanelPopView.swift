@@ -21,7 +21,7 @@ public struct PanelPopView: View {
             self.contentBlocks = contentSchema
         } catch {
             print("Failed to decode ContentBlocks: \(error)")
-            self.contentBlocks = ContentBlocks(blocks: []) // Provide a default or empty value
+            self.contentBlocks = ContentBlocks.ErrorMode()
         }
     }
 

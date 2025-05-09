@@ -26,6 +26,10 @@ struct ContentBlocks: Codable, Sendable {
     let time: Int
     let blocks: [Block]
     let version: String
+    
+    static func ErrorMode() -> ContentBlocks {
+        return ContentBlocks(time: 0, blocks: [], version: "0.0")
+    }
 }
 
 // MARK: - Block
