@@ -17,8 +17,12 @@ internal class NetworkService: @unchecked Sendable {
         url: String,
         data: T
     ) async -> Result<RT, AFError> {
-        let url = try! buildUrl(config, url)
-
+        let url: URL
+        do {
+            url = try buildUrl(config, url)
+        } catch {
+            return .failure(AFError.createURLRequestFailed(error: error))
+        }
         let task = AF
             .request(url, method: .post, parameters: data, encoder: JSONParameterEncoder.default, headers: self.buildHeaders(config))
             .serializingDecodable(RT.self)
