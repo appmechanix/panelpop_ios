@@ -16,9 +16,13 @@ public struct PanelPopView: View {
     public init(_ panel: PanelPopPanel) {
         self.panel = panel
 
-        let contentSchema = try! JSONDecoder().decode(ContentBlocks.self, from: Data(panel.panels[0].schema.utf8))
-
-        self.contentBlocks = contentSchema
+        do {
+            let contentSchema = try JSONDecoder().decode(ContentBlocks.self, from: Data(panel.panels[0].schema.utf8))
+            self.contentBlocks = contentSchema
+        } catch {
+            print("Failed to decode ContentBlocks: \(error)")
+            self.contentBlocks = ContentBlocks(blocks: []) // Provide a default or empty value
+        }
     }
 
     public var body: some View {
