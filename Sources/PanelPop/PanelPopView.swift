@@ -5,7 +5,6 @@
 //  Created by Daniel Wylie on 09/05/2025.
 //
 
-import NukeUI
 import SwiftUI
 
 @available(iOS 15.0, macOS 10.15, *)
@@ -157,18 +156,26 @@ public struct PanelPopView: View {
                             case .image:
                                 VStack(alignment: .center) {
                                     if let url = block.data.file?.url, let validURL = URL(string: url) {
-                                        LazyImage(url: validURL) { state in
-                                            if let image = state.image {
+                                        AsyncImage(url: validURL) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                ProgressView()
+                                                    .frame(maxWidth: .infinity)
+                                            case let .success(image):
                                                 image
                                                     .resizable()
                                                     .scaledToFit()
                                                     .frame(maxWidth: .infinity)
                                                     .cornerRadius(8)
-                                            } else if state.error != nil {
+                                            case .failure:
                                                 Text("Failed to load image")
                                                     .foregroundColor(.red)
+                                                    .frame(maxWidth: .infinity)
+                                            @unknown default:
+                                                EmptyView()
                                             }
                                         }
+
                                         Text(block.data.caption ?? "No caption")
                                             .font(.caption)
                                             .padding(.vertical, 8)

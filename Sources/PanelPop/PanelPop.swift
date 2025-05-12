@@ -5,7 +5,6 @@
 //  Created by Daniel Wylie on 11/02/2025.
 //
 
-import Alamofire
 import Foundation
 
 @MainActor
@@ -32,7 +31,7 @@ public final class PanelPopManager {
 
         let requestModel = PanelRequestModel(version: "1.0")
 
-        let networkResponse: Result<PanelPopPanel?, AFError> = await self.networkService.post(
+        let networkResponse: Result<PanelPopPanel?, PanelPopNetworkError> = await self.networkService.post(
             config: config,
             url: "/panels/v1/fetch/\(token)",
             data: requestModel
@@ -43,9 +42,7 @@ public final class PanelPopManager {
             return response
 
         case let .failure(error):
-            print("Error: \(error)")
-
-            if let statusCode = error.responseCode, statusCode == 403 {
+            if case let .httpError(statusCode) = error, statusCode == 403 {
                 do {
                     let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
                     let documentsPath = paths[0]
@@ -55,10 +52,12 @@ public final class PanelPopManager {
                 } catch {
                     print("Failed to create inactive file: \(error)")
                 }
+            } else {
+                print("Other error: \(error)")
             }
-
-            return nil
         }
+        
+        return nil
     }
 }
 
