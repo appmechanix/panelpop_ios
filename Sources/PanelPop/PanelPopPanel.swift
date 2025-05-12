@@ -6,8 +6,10 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - PanelResponseModel
+
 public struct PanelPopPanel: Codable, Sendable {
     let hash, token, name: String
     let platform: Int
@@ -16,6 +18,7 @@ public struct PanelPopPanel: Codable, Sendable {
 }
 
 // MARK: - Panel
+
 public struct Panel: Codable, Sendable {
     let name: String
     let panelType: Int
@@ -25,6 +28,7 @@ public struct Panel: Codable, Sendable {
 }
 
 // MARK: - Button
+
 public struct PanelPopButton: Codable, Sendable {
-    let text, icon, meta: String
+    let text, icon, meta, style: String
 }

@@ -15,28 +15,32 @@ public struct PanelPopView: View {
     @State private var panel: PanelPopPanel?
     @State private var contentBlocks: ContentBlocks?
 
+    public var onButtonTapped: ((PanelPopButton) -> Void)?
+
     public init(_ token: String) {
         self.token = token
     }
 
     public init(_ panel: PanelPopPanel) {
         self.token = panel.token
-        self.panel = panel
+        _panel = State(initialValue: panel)
 
+        let contentSchema: ContentBlocks
         do {
-            let contentSchema = try JSONDecoder().decode(ContentBlocks.self, from: Data(panel.panels[0].schema.utf8))
-            self.contentBlocks = contentSchema
+            contentSchema = try JSONDecoder().decode(ContentBlocks.self, from: Data(panel.panels[0].schema.utf8))
         } catch {
             print("Failed to decode ContentBlocks: \(error)")
-            self.contentBlocks = ContentBlocks.ErrorMode()
+            contentSchema = ContentBlocks.ErrorMode()
         }
+        _contentBlocks = State(initialValue: contentSchema)
     }
 
     func loadPanelIfNeeded() async {
-        guard panel == nil else { return }
+        guard self.panel == nil else { return }
 
         if let loadedPanel = await PanelPop.getPopup(token: token) {
             self.panel = loadedPanel
+
             do {
                 let contentSchema = try JSONDecoder().decode(ContentBlocks.self, from: Data(loadedPanel.panels[0].schema.utf8))
                 self.contentBlocks = contentSchema
@@ -49,20 +53,41 @@ public struct PanelPopView: View {
         }
     }
 
+    private var backgroundColor: Color {
+        #if os(iOS)
+            return Color(uiColor: UIColor.systemBackground)
+        #elseif os(macOS)
+            return Color(nsColor: NSColor.windowBackgroundColor)
+        #endif
+    }
+
     public var body: some View {
-        Group {
+        @Environment(\.presentationMode) var presentationMode
+
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text(panel?.name ?? "Loading...")
+                    .font(.headline)
+                    .padding(.leading)
+
+                Spacer()
+
+                Button {
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                        .imageScale(.large)
+                        .padding()
+                }
+            }
+            .background(Color(.tertiarySystemFill))
+
+            // Main Content
             if let panel = panel, let contentBlocks = contentBlocks {
-                VStack(alignment: .leading, spacing: 16) {
-                    ScrollView {
-                        Text("🎉 PanelPop")
-                            .font(.title)
-                            .bold()
-
-                        Text(panel.name)
-                            .font(.body)
-                            .multilineTextAlignment(.center)
-                            .padding()
-
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
                         ForEach(contentBlocks.blocks, id: \.id) { block in
                             switch block.type {
                             case .paragraph:
@@ -70,7 +95,7 @@ public struct PanelPopView: View {
                                     Text(block.data.text ?? "No text")
                                         .font(.body)
                                         .multilineTextAlignment(.leading)
-                                        .padding()
+                                        .padding(.vertical, 8)
 
                                     Spacer()
                                 }
@@ -80,20 +105,20 @@ public struct PanelPopView: View {
                                     Text(block.data.text ?? "No text")
                                         .font(.title)
                                         .bold()
-                                        .padding()
+                                        .padding(.vertical, 8)
 
                                     Spacer()
                                 }
 
                             case .image:
-                                HStack {
+                                VStack(alignment: .center) {
                                     if let url = block.data.file?.url, let validURL = URL(string: url) {
                                         LazyImage(url: validURL) { state in
                                             if let image = state.image {
                                                 image
                                                     .resizable()
                                                     .scaledToFit()
-                                                    .frame(maxWidth: 300)
+                                                    .frame(maxWidth: .infinity)
                                                     .cornerRadius(8)
                                             } else if state.error != nil {
                                                 Text("Failed to load image")
@@ -102,7 +127,7 @@ public struct PanelPopView: View {
                                         }
                                         Text(block.data.caption ?? "No caption")
                                             .font(.caption)
-                                            .padding()
+                                            .padding(.vertical, 8)
                                     } else {
                                         Text("No image URL")
                                             .foregroundColor(.red)
@@ -124,7 +149,7 @@ public struct PanelPopView: View {
                                             }
                                         }
                                     }
-                                    .padding()
+                                    .padding(.vertical, 8)
                                 } else if block.data.style == "ordered" {
                                     VStack(alignment: .leading) {
                                         ForEach(Array((block.data.items ?? []).enumerated()), id: \.element.content) { index, item in
@@ -139,7 +164,7 @@ public struct PanelPopView: View {
                                             }
                                         }
                                     }
-                                    .padding()
+                                    .padding(.vertical, 8)
                                 } else {
                                     Text("Unknown list style \(block.data.style ?? "")")
                                         .foregroundColor(.red)
@@ -151,30 +176,48 @@ public struct PanelPopView: View {
                                     .foregroundColor(.red)
                             }
                         }
+                    }
+                    .padding()
+                }
 
-                        Button {
-                            print("Button tapped!")
-                        } label: {
-                            Text("Dismiss")
+                // Buttons
+                if !panel.panels[0].buttons.isEmpty {
+                    HStack {
+                        ForEach(panel.panels[0].buttons, id: \.text) { button in
+                            if button.style == "primary" {
+                                Button {
+                                    onButtonTapped?(button)
+                                } label: {
+                                    Text(button.text)
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                            } else {
+                                Button {
+                                    onButtonTapped?(button)
+                                } label: {
+                                    Text(button.text)
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.gray.opacity(0.2))
-                            .shadow(radius: 4)
+                        backgroundColor
+                            .overlay(Divider(), alignment: .top)
                     )
-                    .padding()
                 }
             } else {
+                // Loading View
                 VStack(alignment: .center, spacing: 16) {
                     Spacer()
-
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
                         .scaleEffect(2)
                         .padding()
-
                     Spacer()
                 }
             }
@@ -201,9 +244,16 @@ public struct PanelPopView: View {
                 "schema": "{\\"time\\": 1746760619531, \\"blocks\\": [{\\"id\\": \\"tGjMYFC37W\\", \\"data\\": {\\"text\\": \\"This is some text\\"}, \\"type\\": \\"paragraph\\"}, {\\"id\\": \\"ZUToz62mk5\\", \\"data\\": {\\"text\\": \\"This is <i>some</i> text <b>with</b> formatting and a <a href=\\\\\\"https://overlandnavigator.co.nz/\\\\\\">link</a>\\"}, \\"type\\": \\"paragraph\\"}, {\\"id\\": \\"N7-m0kO1bI\\", \\"data\\": {\\"text\\": \\"This is a heading\\", \\"level\\": 2}, \\"type\\": \\"header\\"}, {\\"id\\": \\"JBJMoUzUZQ\\", \\"data\\": {\\"meta\\": {}, \\"items\\": [{\\"meta\\": {}, \\"items\\": [], \\"content\\": \\"This is a list item\\"}, {\\"meta\\": {}, \\"items\\": [], \\"content\\": \\"This is a list item\\"}], \\"style\\": \\"unordered\\"}, \\"type\\": \\"list\\"}, {\\"id\\": \\"c_Quv3QCbL\\", \\"data\\": {\\"meta\\": {\\"counterType\\": \\"numeric\\"}, \\"items\\": [{\\"meta\\": {}, \\"items\\": [], \\"content\\": \\"This is an ordered item\\"}, {\\"meta\\": {}, \\"items\\": [], \\"content\\": \\"This is an ordered item\\"}], \\"style\\": \\"ordered\\"}, \\"type\\": \\"list\\"}, {\\"id\\": \\"m2Yy3OQrtc\\", \\"data\\": {\\"meta\\": {}, \\"items\\": [{\\"meta\\": {\\"checked\\": false}, \\"items\\": [], \\"content\\": \\"This is a checklist\\"}], \\"style\\": \\"checklist\\"}, \\"type\\": \\"list\\"}, {\\"id\\": \\"-TWQQOld_t\\", \\"data\\": {\\"file\\": {\\"url\\": \\"https://static.panelpop.co/0fsd52/0fsd52/91ndaz/1255002b-11d7-4aed-a89b-51794d9b2c4d\\"}, \\"caption\\": \\"This is the caption\\", \\"stretched\\": false, \\"withBorder\\": false, \\"withBackground\\": false}, \\"type\\": \\"image\\"}], \\"version\\": \\"2.31.0-rc.7\\"}",
                 "buttons": [
                     {
-                        "text": "Close",
+                        "text": "Not now",
                         "icon": "remove",
-                        "meta": "closebutton"
+                        "meta": "closebutton",
+                        "style": "secondary"
+                    },
+                    {
+                        "text": "Upgrade now",
+                        "icon": "remove",
+                        "meta": "upgradenow",
+                        "style": "primary"
                     }
                 ],
                 "displayType": 0
