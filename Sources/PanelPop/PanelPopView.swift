@@ -21,6 +21,11 @@ public struct PanelPopView: View {
         self.token = token
     }
 
+    public init(_ token: String, onButtonTapped: ((PanelPopButton) -> Void)?) {
+        self.token = token
+        self.onButtonTapped = onButtonTapped
+    }
+
     public init(_ panel: PanelPopPanel) {
         self.token = panel.token
         _panel = State(initialValue: panel)
@@ -110,7 +115,6 @@ public struct PanelPopView: View {
                                            ],
                                            documentAttributes: nil
                                        ) {
-                            
                                         // Convert to AttributedString (cross-platform)
                                         if let cleaned = try? AttributedString(raw, including: AttributeScopes.FoundationAttributes.self) {
                                             HStack {
