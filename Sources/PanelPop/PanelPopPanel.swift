@@ -20,15 +20,15 @@ public struct PanelPopPanel: Codable, Sendable {
 // MARK: - Panel
 
 public struct Panel: Codable, Sendable {
-    let name: String
-    let panelType: Int
-    let schema: String
-    let buttons: [PanelPopButton]
-    let displayType: Int
+    public let name: String
+    public let panelType: Int
+    public let schema: String
+    public let buttons: [PanelPopButton]
+    public let displayType: Int
 }
 
 // MARK: - Button
 
 public struct PanelPopButton: Codable, Sendable {
-    let text, icon, meta, style: String
+    public let text, icon, meta, style: String
 }
