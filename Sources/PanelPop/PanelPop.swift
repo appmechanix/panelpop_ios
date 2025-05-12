@@ -8,31 +8,16 @@
 import Alamofire
 import Foundation
 
-@available(iOS 15.0, macOS 10.15, *)
-public class PanelPop {
-    private var networkService = NetworkService()
+@MainActor
+public final class PanelPopManager {
+    private var config: PanelPopConfig
+    private lazy var networkService = NetworkService()
 
-    public static func Initialize(_ appKey: String) -> PanelPop {
-        var config = PanelPopConfig(appKey: appKey)
-
-        // Check if we have an inactive file setup - bascially created when the account or app is
-        // no longer valid
-        let documentsPath = getDocumentsDirectory()
-        if FileManager.default.fileExists(atPath: "\(documentsPath)/panelpop_inactive.json") {
-            config.isActive = false
-        }
-
-        return .init(config)
+    init(apiKey: String) {
+        self.config = PanelPopConfig(appKey: apiKey)
     }
 
-    var config: PanelPopConfig
-
-    init(_ config: PanelPopConfig) {
-        self.config = config
-    }
-
-    @MainActor
-    public func ShowPopup(_ token: String) async -> PanelPopPanel? {
+    public func getPopup(token: String) async -> PanelPopPanel? {
         // Check if the app is active
         guard config.isActive else {
             print("PanelPop is inactive")
@@ -75,9 +60,23 @@ public class PanelPop {
             return nil
         }
     }
+}
 
-    private static func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0]
+@available(iOS 15.0, macOS 10.15, *)
+@MainActor
+public enum PanelPop {
+    private static var shared: PanelPopManager?
+
+    public static func initialize(_ apiKey: String) {
+        self.shared = PanelPopManager(apiKey: apiKey)
+    }
+
+    public static func getPopup(token: String) async -> PanelPopPanel? {
+        guard let shared = self.shared else {
+            print("PanelPop not initialized")
+            return nil
+        }
+
+        return await shared.getPopup(token: token)
     }
 }

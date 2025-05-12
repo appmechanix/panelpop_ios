@@ -10,10 +10,16 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 10.15, *)
 public struct PanelPopView: View {
-    private let panel: PanelPopPanel
-    private let contentBlocks: ContentBlocks
+    private let token: String
+    private var panel: PanelPopPanel?
+    private var contentBlocks: ContentBlocks?
+
+    public init(_ token: String) {
+        self.token = token
+    }
 
     public init(_ panel: PanelPopPanel) {
+        self.token = panel.token
         self.panel = panel
 
         do {
@@ -26,119 +32,156 @@ public struct PanelPopView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ScrollView {
-                Text("🎉 PanelPop")
-                    .font(.title)
-                    .bold()
+        Group {
+            if self.panel == nil {
+                VStack(alignment: .center, spacing: 16) {
+                    Spacer()
 
-                Text(panel.name)
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                    .padding()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .scaleEffect(2)
+                        .padding()
 
-                ForEach(contentBlocks.blocks, id: \.id) { block in
-                    switch block.type {
-                    case .paragraph:
-                        HStack {
-                            Text(block.data.text ?? "No text")
-                                .font(.body)
-                                .multilineTextAlignment(.leading)
-                                .padding()
-
-                            Spacer()
-                        }
-
-                    case .header:
-                        HStack {
-                            Text(block.data.text ?? "No text")
+                    Spacer()
+                }
+            } else {
+                if let panel = self.panel, let contentBlocks = self.contentBlocks {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ScrollView {
+                            Text("🎉 PanelPop")
                                 .font(.title)
                                 .bold()
+
+                            Text(panel.name)
+                                .font(.body)
+                                .multilineTextAlignment(.center)
                                 .padding()
 
-                            Spacer()
-                        }
+                            ForEach(contentBlocks.blocks, id: \.id) { block in
+                                switch block.type {
+                                case .paragraph:
+                                    HStack {
+                                        Text(block.data.text ?? "No text")
+                                            .font(.body)
+                                            .multilineTextAlignment(.leading)
+                                            .padding()
 
-                    case .image:
-                        HStack {
-                            if let url = block.data.file?.url, let validURL = URL(string: url) {
-                                LazyImage(url: validURL) { state in
-                                    if let image = state.image {
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(maxWidth: 300)
-                                            .cornerRadius(8)
-                                    } else if state.error != nil {
-                                        Text("Failed to load image")
+                                        Spacer()
+                                    }
+
+                                case .header:
+                                    HStack {
+                                        Text(block.data.text ?? "No text")
+                                            .font(.title)
+                                            .bold()
+                                            .padding()
+
+                                        Spacer()
+                                    }
+
+                                case .image:
+                                    HStack {
+                                        if let url = block.data.file?.url, let validURL = URL(string: url) {
+                                            LazyImage(url: validURL) { state in
+                                                if let image = state.image {
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .frame(maxWidth: 300)
+                                                        .cornerRadius(8)
+                                                } else if state.error != nil {
+                                                    Text("Failed to load image")
+                                                        .foregroundColor(.red)
+                                                }
+                                            }
+                                            Text(block.data.caption ?? "No caption")
+                                                .font(.caption)
+                                                .padding()
+                                        } else {
+                                            Text("No image URL")
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+
+                                case .list:
+                                    if block.data.style == "unordered" {
+                                        VStack(alignment: .leading) {
+                                            ForEach(block.data.items ?? [], id: \.content) { item in
+                                                HStack {
+                                                    Circle()
+                                                        .fill(Color.black)
+                                                        .frame(width: 8, height: 8)
+
+                                                    Text(item.content)
+
+                                                    Spacer()
+                                                }
+                                            }
+                                        }
+                                        .padding()
+                                    } else if block.data.style == "ordered" {
+                                        VStack(alignment: .leading) {
+                                            ForEach(Array((block.data.items ?? []).enumerated()), id: \.element.content) { index, item in
+                                                HStack {
+                                                    Text("\(index + 1).")
+                                                        .font(.body)
+                                                        .fontWeight(.bold)
+
+                                                    Text(item.content)
+
+                                                    Spacer()
+                                                }
+                                            }
+                                        }
+                                        .padding()
+                                    } else {
+                                        Text("Unknown list style \(block.data.style ?? "")")
                                             .foregroundColor(.red)
                                     }
+
+                                default:
+                                    Text("Unknown block type: \(block.type)")
+                                        .font(.body)
+                                        .foregroundColor(.red)
                                 }
-                                Text(block.data.caption ?? "No caption")
-                                    .font(.caption)
-                                    .padding()
-                            } else {
-                                Text("No image URL")
-                                    .foregroundColor(.red)
+                            }
+
+                            Button {
+                                print("Button tapped!")
+                            } label: {
+                                Text("Dismiss")
                             }
                         }
-
-                    case .list:
-                        if block.data.style == "unordered" {
-                            VStack(alignment: .leading) {
-                                ForEach(block.data.items ?? [], id: \.content) { item in
-                                    HStack {
-                                        Circle()
-                                            .fill(Color.black)
-                                            .frame(width: 8, height: 8)
-
-                                        Text(item.content)
-
-                                        Spacer()
-                                    }
-                                }
-                            }
-                            .padding()
-                        } else if block.data.style == "ordered" {
-                            VStack(alignment: .leading) {
-                                ForEach(Array((block.data.items ?? []).enumerated()), id: \.element.content) { index, item in
-                                    HStack {
-                                        Text("\(index + 1).")
-                                            .font(.body)
-                                            .fontWeight(.bold)
-
-                                        Text(item.content)
-
-                                        Spacer()
-                                    }
-                                }
-                            }
-                            .padding()
-                        } else {
-                            Text("Unknown list style \(block.data.style ?? "")")
-                                .foregroundColor(.red)
-                        }
-
-                    default:
-                        Text("Unknown block type: \(block.type)")
-                            .font(.body)
-                            .foregroundColor(.red)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.gray.opacity(0.2))
+                                .shadow(radius: 4)
+                        )
+                        .padding()
                     }
                 }
-
-                Button {
-                    print("Button tapped!")
-                } label: {
-                    Text("Dismiss")
+            }
+        }.onAppear {
+            if let panel = self.panel {
+                print("PanelPopView appeared with token: \(panel.token)")
+            } else {
+                Task {
+                    let panel = await PanelPop.getPopup(token: self.token)
+                    if let panel = panel {
+                        self.panel = panel
+                        do {
+                            let contentSchema = try JSONDecoder().decode(ContentBlocks.self, from: Data(panel.panels[0].schema.utf8))
+                            self.contentBlocks = contentSchema
+                        } catch {
+                            print("Failed to decode ContentBlocks: \(error)")
+                            self.contentBlocks = ContentBlocks.ErrorMode()
+                        }
+                    } else {
+                        print("Failed to fetch panel")
+                    }
                 }
             }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.gray.opacity(0.2))
-                    .shadow(radius: 4)
-            )
-            .padding()
         }
     }
 }
@@ -174,4 +217,9 @@ public struct PanelPopView: View {
     PanelPopView(
         panelResponseModel
     )
+}
+
+@available(iOS 15.0, macOS 10.15, *)
+#Preview {
+    PanelPopView("demo_panel")
 }
