@@ -61,6 +61,14 @@ public struct PanelPopView: View {
         #endif
     }
 
+    var platformLinkColor: Any {
+        #if os(iOS)
+            return UIColor.link
+        #else
+            return NSColor.linkColor
+        #endif
+    }
+
     public var body: some View {
         @Environment(\.presentationMode) var presentationMode
 
@@ -92,10 +100,29 @@ public struct PanelPopView: View {
                             switch block.type {
                             case .paragraph:
                                 HStack {
-                                    Text(block.data.text ?? "No text")
-                                        .font(.body)
-                                        .multilineTextAlignment(.leading)
-                                        .padding(.vertical, 8)
+                                    if let html = block.data.text,
+                                       let data = html.data(using: .utf8),
+                                       let raw = try? NSMutableAttributedString(
+                                           data: data,
+                                           options: [
+                                               .documentType: NSAttributedString.DocumentType.html,
+                                               .characterEncoding: String.Encoding.utf8.rawValue,
+                                           ],
+                                           documentAttributes: nil
+                                       ) {
+                            
+                                        // Convert to AttributedString (cross-platform)
+                                        if let cleaned = try? AttributedString(raw, including: AttributeScopes.FoundationAttributes.self) {
+                                            HStack {
+                                                Text(cleaned)
+                                                    .font(.body)
+                                                    .multilineTextAlignment(.leading)
+                                                    .padding(.vertical, 8)
+
+                                                Spacer()
+                                            }
+                                        }
+                                    }
 
                                     Spacer()
                                 }
