@@ -90,8 +90,6 @@ public struct PanelPopView: View {
     }
 
     public var body: some View {
-        @Environment(\.presentationMode) var presentationMode
-
         VStack(spacing: 0) {
             // Header
             HStack {
@@ -102,7 +100,7 @@ public struct PanelPopView: View {
                 Spacer()
 
                 Button {
-                    presentationMode.wrappedValue.dismiss()
+                    self.onCloseButtonTapped()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
