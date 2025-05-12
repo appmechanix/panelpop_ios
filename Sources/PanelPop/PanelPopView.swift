@@ -15,19 +15,34 @@ public struct PanelPopView: View {
     @State private var panel: PanelPopPanel?
     @State private var contentBlocks: ContentBlocks?
 
+    public var onCloseButtonTapped: () -> Void
     public var onButtonTapped: ((PanelPopButton) -> Void)?
 
-    public init(_ token: String) {
+    public init(
+        _ token: String,
+        onCloseButtonTapped: @escaping () -> Void
+    ) {
         self.token = token
+        self.onCloseButtonTapped = onCloseButtonTapped
     }
 
-    public init(_ token: String, onButtonTapped: ((PanelPopButton) -> Void)?) {
+    public init(
+        _ token: String,
+        onCloseButtonTapped: @escaping () -> Void,
+        onButtonTapped: ((PanelPopButton) -> Void)?
+    ) {
         self.token = token
+        self.onCloseButtonTapped = onCloseButtonTapped
         self.onButtonTapped = onButtonTapped
     }
 
-    public init(_ panel: PanelPopPanel) {
+    public init(
+        _ panel: PanelPopPanel,
+        onCloseButtonTapped: @escaping () -> Void
+    ) {
         self.token = panel.token
+        self.onCloseButtonTapped = onCloseButtonTapped
+
         _panel = State(initialValue: panel)
 
         let contentSchema: ContentBlocks
@@ -295,11 +310,16 @@ public struct PanelPopView: View {
     let panelResponseModel = try! JSONDecoder().decode(PanelPopPanel.self, from: Data(jsonString.utf8))
 
     PanelPopView(
-        panelResponseModel
+        panelResponseModel,
+        onCloseButtonTapped: {
+            print("Closed")
+        }
     )
 }
 
 @available(iOS 15.0, macOS 10.15, *)
 #Preview {
-    PanelPopView("demo_panel")
+    PanelPopView("demo_panel") {
+        print("Closed")
+    }
 }
