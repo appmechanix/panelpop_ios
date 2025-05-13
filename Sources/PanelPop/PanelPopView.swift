@@ -9,7 +9,7 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 10.15, *)
 public struct PanelPopView: View {
-    private let token: String
+    @State private var token: String
 
     @State private var panel: PanelPopPanel?
     @State private var contentBlocks: ContentBlocks?
