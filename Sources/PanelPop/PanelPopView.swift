@@ -9,7 +9,7 @@ import SwiftUI
 
 @available(iOS 15.0, macOS 10.15, *)
 public struct PanelPopView: View {
-    @State private var token: String
+    @Binding private var token: String
 
     @State private var panel: PanelPopPanel?
     @State private var contentBlocks: ContentBlocks?
@@ -18,19 +18,19 @@ public struct PanelPopView: View {
     public var onButtonTapped: ((PanelPopButton) -> Void)?
 
     public init(
-        _ token: String,
+        _ token: Binding<String>,
         onCloseButtonTapped: @escaping () -> Void
     ) {
-        self.token = token
+        self._token = token
         self.onCloseButtonTapped = onCloseButtonTapped
     }
 
     public init(
-        _ token: String,
+        _ token: Binding<String>,
         onCloseButtonTapped: @escaping () -> Void,
         onButtonTapped: ((PanelPopButton) -> Void)?
     ) {
-        self.token = token
+        self._token = token
         self.onCloseButtonTapped = onCloseButtonTapped
         self.onButtonTapped = onButtonTapped
     }
@@ -39,7 +39,7 @@ public struct PanelPopView: View {
         _ panel: PanelPopPanel,
         onCloseButtonTapped: @escaping () -> Void
     ) {
-        self.token = panel.token
+        self._token = .constant(panel.token)
         self.onCloseButtonTapped = onCloseButtonTapped
 
         _panel = State(initialValue: panel)
@@ -324,7 +324,7 @@ public struct PanelPopView: View {
 
 @available(iOS 15.0, macOS 10.15, *)
 #Preview {
-    PanelPopView("demo_panel") {
+    PanelPopView(.constant("demo_panel")) {
         print("Closed")
     }
 }
