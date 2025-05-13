@@ -66,8 +66,8 @@ public final class PanelPopManager {
 public enum PanelPop {
     private static var shared: PanelPopManager?
 
-    public static func initialize(_ apiKey: String) {
-        self.shared = PanelPopManager(apiKey: apiKey)
+    public static func initialize(apiKey: String, appVersion: String) {
+        self.shared = PanelPopManager(apiKey: apiKey, appVersion: appVersion)
     }
 
     public static func getPopup(token: String) async -> PanelPopPanel? {
