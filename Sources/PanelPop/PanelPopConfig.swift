@@ -7,6 +7,7 @@
 
 public struct PanelPopConfig: Sendable {
     var appKey: String
+    var appVersion: String
     var apiUrl: String = "https://serve.panelpop.co/"
     var isActive: Bool = true
 }

@@ -12,8 +12,8 @@ public final class PanelPopManager {
     private var config: PanelPopConfig
     private lazy var networkService = NetworkService()
 
-    init(apiKey: String) {
-        self.config = PanelPopConfig(appKey: apiKey)
+    init(apiKey: String, appVersion: String) {
+        self.config = PanelPopConfig(appKey: apiKey, appVersion: appVersion)
     }
 
     public func getPopup(token: String) async -> PanelPopPanel? {
@@ -29,7 +29,7 @@ public final class PanelPopManager {
             return nil
         }
 
-        let requestModel = PanelRequestModel(version: "1.0")
+        let requestModel = PanelRequestModel(version: config.appVersion)
 
         let networkResponse: Result<PanelPopPanel?, PanelPopNetworkError> = await self.networkService.post(
             config: config,
@@ -56,7 +56,7 @@ public final class PanelPopManager {
                 print("Other error: \(error)")
             }
         }
-        
+
         return nil
     }
 }
